@@ -50,7 +50,7 @@ void
 ThermalUCProperties::k_from_T(const Real & T, Real & k, Real & dk_dT) const
 {
 
- if ((323 < T) && (T < 924))
+  if ((323 < T) && (T < 924))
   {
     k = k_from_T(T);
     dk_dT = -3.04e-3 + 7.22e-6 * (T - 273);
