@@ -37,11 +37,11 @@ ThermalUCProperties::k_from_T(const Real & T) const
 {
   if ((323 < T) && (T < 924))
   {
-    return 21.7 - 3.04e-3 * T  + 3.61e-6 * Utility::pow<2>(T) ;
+    return 21.7 - 3.04e-3 * T + 3.61e-6 * Utility::pow<2>(T);
   }
   else if ((924 < T) && (T < 2573))
   {
-    return 20.2 + 1.48e-3 * T ;
+    return 20.2 + 1.48e-3 * T;
   }
   else
   {
@@ -55,7 +55,7 @@ ThermalUCProperties::k_from_T(const Real & T, Real & k, Real & dk_dT) const
   if ((323 < T) && (T < 924))
   {
     k = k_from_T(T);
-    dk_dT = -3.04e-3 + 7.22e-6 * T ;
+    dk_dT = -3.04e-3 + 7.22e-6 * T;
   }
   else if ((924 < T) && (T < 2573))
   {
