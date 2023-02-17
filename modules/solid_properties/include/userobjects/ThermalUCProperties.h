@@ -9,8 +9,6 @@ public:
 
   ThermalUCProperties(const InputParameters & parameters);
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
 
   virtual Real k_from_T(const Real & T) const override;
 

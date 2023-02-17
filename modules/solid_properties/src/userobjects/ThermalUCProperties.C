@@ -29,7 +29,7 @@ void
 ThermalUCProperties::cp_from_T(const Real & T, Real & cp, Real & dcp_dT) const
 {
   cp = cp_from_T(T);
-  dcp_dT = -5.068e-3 - 3.5208e-5 * T + 6976200 / Utility::pow<3>(T);
+  dcp_dT = -5.068e-3 + 3.5208e-5 * T + 6976200 / Utility::pow<3>(T);
 }
 
 Real
