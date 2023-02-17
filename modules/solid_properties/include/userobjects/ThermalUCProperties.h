@@ -9,7 +9,6 @@ public:
 
   ThermalUCProperties(const InputParameters & parameters);
 
-
   virtual Real k_from_T(const Real & T) const override;
 
   virtual void k_from_T(const Real & T, Real & k, Real & dk_dT) const override;
