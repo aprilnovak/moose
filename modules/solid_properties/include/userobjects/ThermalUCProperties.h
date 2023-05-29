@@ -25,4 +25,3 @@ protected:
   /// (constant) density
   const Real & _rho_const;
 };
-#pragma GCC diagnostic pop
