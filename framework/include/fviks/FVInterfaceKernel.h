@@ -25,7 +25,7 @@
 #include "TaggingInterface.h"
 #include "NeighborCoupleableMooseVariableDependencyIntermediateInterface.h"
 #include "TwoMaterialPropertyInterface.h"
-#include "FunctorInterface.h"
+#include "ADFunctorInterface.h"
 #include "FVFaceResidualObject.h"
 #include "FaceArgInterface.h"
 
@@ -56,7 +56,7 @@ class FVInterfaceKernel : public MooseObject,
                           public TaggingInterface,
                           public NeighborCoupleableMooseVariableDependencyIntermediateInterface,
                           public TwoMaterialPropertyInterface,
-                          public FunctorInterface,
+                          public ADFunctorInterface,
                           public FVFaceResidualObject,
                           public FaceArgProducerInterface
 {
@@ -133,14 +133,13 @@ protected:
   /**
    * Process the provided residual given \p var_num and whether this is on the neighbor side
    */
-  void processResidual(Real resid, unsigned int var_num, bool neighbor);
+  void addResidual(Real resid, unsigned int var_num, bool neighbor);
 
-#ifdef MOOSE_GLOBAL_AD_INDEXING
+  using TaggingInterface::addJacobian;
   /**
    * Process the derivatives for the provided residual and dof index
    */
-  void processJacobian(const ADReal & resid, dof_id_type dof_index);
-#endif
+  void addJacobian(const ADReal & resid, dof_id_type dof_index, Real scaling_factor);
 
   /**
    * @return A structure that contains information about the face info element and skewness

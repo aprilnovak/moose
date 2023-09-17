@@ -40,12 +40,30 @@ DiscreteLineSegmentInterface::DiscreteLineSegmentInterface(const MooseObject * m
     _n_elems(moose_object->parameters().get<std::vector<unsigned int>>("n_elems")),
     _n_elem(std::accumulate(_n_elems.begin(), _n_elems.end(), 0)),
     _n_sections(_lengths.size()),
+    _section_end(_n_sections),
+    _x_centers(_n_elem),
     _R(computeDirectionTransformationTensor(_dir)),
     _Rx(computeXRotationTransformationTensor(_rotation)),
     _R_inv(_R.inverse()),
     _Rx_inv(_Rx.inverse()),
     _moose_object_name_dlsi(moose_object->name())
 {
+  std::partial_sum(_lengths.begin(), _lengths.end(), _section_end.begin());
+
+  // Compute the axial coordinates of the centers of each element
+  unsigned int k_section_begin = 0;
+  Real x_begin = 0.0;
+  for (unsigned int j = 0; j < _n_sections; j++)
+  {
+    const Real dx = _lengths[j] / _n_elems[j];
+    for (unsigned int i = 0; i < _n_elems[j]; i++)
+    {
+      const unsigned int k = k_section_begin + i;
+      _x_centers[k] = x_begin + 0.5 * dx;
+      x_begin += dx;
+    }
+    k_section_begin += _n_elems[j];
+  }
 }
 
 RealVectorValue
@@ -98,6 +116,35 @@ DiscreteLineSegmentInterface::computeAxialCoordinate(const Point & p) const
                ").");
   else
     return ax_coord;
+}
+
+Real
+DiscreteLineSegmentInterface::computeRadialCoordinate(const Point & p) const
+{
+  const RealVectorValue v = (p - _position);
+  return v.cross(_dir).norm();
+}
+
+unsigned int
+DiscreteLineSegmentInterface::getAxialSectionIndex(const Point & p) const
+{
+  const Real axial_coordinate = computeAxialCoordinate(p);
+  for (unsigned int i = 0; i < _n_sections; ++i)
+    if (MooseUtils::absoluteFuzzyLessEqual(axial_coordinate, _section_end[i]))
+      return i;
+
+  mooseError("No axial section index was found.");
+}
+
+unsigned int
+DiscreteLineSegmentInterface::getAxialElementIndex(const Point & p_center) const
+{
+  const Real axial_coordinate = computeAxialCoordinate(p_center);
+  for (unsigned int i = 0; i < _n_elem; ++i)
+    if (MooseUtils::absoluteFuzzyEqual(axial_coordinate, _x_centers[i]))
+      return i;
+
+  mooseError("No axial element index was found.");
 }
 
 Point

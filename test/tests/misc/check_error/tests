@@ -26,8 +26,7 @@
   [checked_pointer_param_test]
     type = 'RunException'
     input = 'checked_pointer_param_test.i'
-    expect_err = "after parameter name"
-
+    expect_err = "(checked_pointer_param_test.i:3.2: syntax error, unexpected invalid token, expecting =|checked_pointer_param_test.i:3: expected '=' after parameter name 'x', got '\[')"
     requirement = 'The system shall report an error when a null pointer-checked parameter is retrieved from the InputParameters object.'
     issues = '#10356'
   []
@@ -396,7 +395,6 @@
 
     requirement = 'The system shall report an error if one or more domain blocks do not have any active FVKernels objects assigned.'
     issues = '#1405 #15196'
-    ad_indexing_type = 'global'
   []
 
   [incomplete_fvkernel_variable_coverage_test]
@@ -406,7 +404,6 @@
 
     requirement = 'The system shall report an error if one or more variables do not have any active FVKernel objects assigned.'
     issues = '#1405 #15196'
-    ad_indexing_type = 'global'
   []
 
   [invalid_elemental_to_nodal_couple_test]
@@ -439,7 +436,7 @@
   [coupled_grad_without_declare]
     type = 'RunException'
     input = 'coupled_grad_without_declare.i'
-    expect_err = 'The coupled variable "\w+" was never added to this objects\'s InputParameters'
+    expect_err = 'The coupled variable "\w+" was never added to this object\'s InputParameters'
 
     requirement = "The system shall report an error when a coupled variable is supplied that was not added as a valid parameter."
     issues = '#1405'
@@ -1085,6 +1082,17 @@
     design = 'Coupleable.md'
     issues = '#11623'
   []
+  [coupled_constant_yet_needs_name]
+    type = 'RunException'
+    input = 'coupled_nodal_for_non_nodal_variable.i'
+    cli_args = 'Materials/m/type=MaterialDerivativeTestMaterial Materials/m/var1=1 Materials/m/var2=2'
+    expect_err = 'a variable name was queried but a constant'
+
+    requirement = "The system shall report an error if an object tries to get the name of a coupled constant."
+    design = 'Coupleable.md'
+    issues = '#22597'
+  []
+
   [missing_executioner]
     type = 'RunException'
     input = 'missing_executioner.i'

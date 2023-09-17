@@ -140,23 +140,21 @@ TriPinHexAssemblyGenerator::TriPinHexAssemblyGenerator(const InputParameters & p
     _pin_id_values(isParamValid("pin_id_values")
                        ? getParam<std::vector<dof_id_type>>("pin_id_values")
                        : std::vector<dof_id_type>()),
-    _pitch_meta(declareMeshProperty<Real>("pitch_meta", _side_length * std::sqrt(3.0))),
-    _pattern_pitch_meta(
-        declareMeshProperty<Real>("pattern_pitch_meta", _side_length * std::sqrt(3.0))),
-    _is_control_drum_meta(declareMeshProperty<bool>("is_control_drum_meta", false)),
-    _background_intervals_meta(
-        declareMeshProperty<unsigned int>("background_intervals_meta", _background_intervals)),
-    _node_id_background_meta(declareMeshProperty<dof_id_type>("node_id_background_meta", 0)),
-    _max_radius_meta(declareMeshProperty<Real>("max_radius_meta", 0.0)),
-    _num_sectors_per_side_meta(
-        declareMeshProperty<std::vector<unsigned int>>("num_sectors_per_side_meta",
-                                                       {_num_sectors_per_side,
-                                                        _num_sectors_per_side,
-                                                        _num_sectors_per_side,
-                                                        _num_sectors_per_side,
-                                                        _num_sectors_per_side,
-                                                        _num_sectors_per_side}))
+    _node_id_background_meta(declareMeshProperty<dof_id_type>("node_id_background_meta", 0))
 {
+  declareMeshProperty<Real>("pitch_meta", _side_length * std::sqrt(3.0));
+  declareMeshProperty<Real>("pattern_pitch_meta", _side_length * std::sqrt(3.0));
+  declareMeshProperty<bool>("is_control_drum_meta", false);
+  declareMeshProperty<unsigned int>("background_intervals_meta", _background_intervals);
+  declareMeshProperty<Real>("max_radius_meta", 0.0);
+  declareMeshProperty<std::vector<unsigned int>>("num_sectors_per_side_meta",
+                                                 {_num_sectors_per_side,
+                                                  _num_sectors_per_side,
+                                                  _num_sectors_per_side,
+                                                  _num_sectors_per_side,
+                                                  _num_sectors_per_side,
+                                                  _num_sectors_per_side});
+
   /* Parameter checks */
   if (_ring_radii.size() != 3)
     paramError("ring_radii", "This parameter must have a size of one or three if provided.");
@@ -352,6 +350,7 @@ TriPinHexAssemblyGenerator::generate()
         _external_boundary_id > 0 ? _external_boundary_id : (boundary_id_type)OUTER_SIDESET_ID) =
         _external_boundary_name;
   }
+  meshes[0]->set_isnt_prepared();
   return dynamic_pointer_cast<MeshBase>(meshes[0]);
 }
 
@@ -478,7 +477,8 @@ TriPinHexAssemblyGenerator::buildSinglePinSection(
       /* side_index = */ 1,
       false,
       0.0,
-      rotation_angle_0);
+      rotation_angle_0,
+      false);
 
   auto mesh1 = buildGeneralSlice(
       ring_radii_corr,
@@ -510,7 +510,8 @@ TriPinHexAssemblyGenerator::buildSinglePinSection(
       /* side_index = */ 1,
       false,
       0.0,
-      rotation_angle_1);
+      rotation_angle_1,
+      false);
 
   mesh0->stitch_meshes(*mesh1,
                        SLICE_BEGIN,

@@ -61,18 +61,6 @@ void extraSparsity(SparsityPattern::Graph & sparsity,
                    void * context);
 
 /**
- * IO Methods for restart, backup and restore.
- */
-template <>
-void dataStore(std::ostream & stream, SystemBase & system_base, void * context);
-
-/**
- * IO Methods for restart, backup and restore.
- */
-template <>
-void dataLoad(std::istream & stream, SystemBase & system_base, void * context);
-
-/**
  * Information about variables that will be copied
  */
 struct VarCopyInfo
@@ -206,22 +194,30 @@ public:
    * If the state does not exist, it will be initialized in addition to any newer
    * states before it that have not been initialized.
    */
-  virtual NumericVector<Number> & solutionState(const unsigned int state);
+  virtual NumericVector<Number> &
+  solutionState(const unsigned int state,
+                Moose::SolutionIterationType iteration_type = Moose::SolutionIterationType::Time);
 
   /**
    * Get a state of the solution (0 = current, 1 = old, 2 = older, etc).
    */
-  virtual const NumericVector<Number> & solutionState(const unsigned int state) const;
+  virtual const NumericVector<Number> & solutionState(
+      const unsigned int state,
+      Moose::SolutionIterationType iteration_type = Moose::SolutionIterationType::Time) const;
 
   /**
    * Registers that the solution state \p state is needed.
    */
-  virtual void needSolutionState(const unsigned int state);
+  virtual void needSolutionState(
+      const unsigned int state,
+      Moose::SolutionIterationType iteration_type = Moose::SolutionIterationType::Time);
 
   /**
    * Whether or not the system has the solution state (0 = current, 1 = old, 2 = older, etc).
    */
-  virtual bool hasSolutionState(const unsigned int state) const;
+  virtual bool hasSolutionState(
+      const unsigned int state,
+      Moose::SolutionIterationType iteration_type = Moose::SolutionIterationType::Time) const;
 
   virtual Number & duDotDu() { return _du_dot_du; }
   virtual Number & duDotDotDu() { return _du_dotdot_du; }
@@ -861,12 +857,10 @@ public:
   /// Whether or not there are variables to be restarted from an Exodus mesh file
   bool hasVarCopy() const { return _var_to_copy.size() > 0; }
 
-#ifdef MOOSE_GLOBAL_AD_INDEXING
   /**
    * Add the scaling factor vector to the system
    */
   void addScalingVector();
-#endif
 
   /**
    * Whether or not the solution states have been initialized via initSolutionState()
@@ -903,13 +897,6 @@ public:
    * @return the type of variables this system holds, e.g. nonlinear or auxiliary
    */
   Moose::VarKindType varKind() const { return _var_kind; }
-
-  /**
-   * Whether or not the converged solution is valid
-   */
-  bool solutionInvalid() const { return _solution_invalid; }
-
-  void setSolutionInvalid(bool solution_invalid);
 
 protected:
   /**
@@ -980,25 +967,24 @@ protected:
   /// Whether or not the solution states have been initialized
   bool _solution_states_initialized;
 
-  /// whether or not the converged solution is valid
-  bool _solution_invalid;
-
 private:
   /**
    * Gets the vector name used for an old (not current) solution state.
    */
-  TagName oldSolutionStateVectorName(const unsigned int) const;
+  TagName oldSolutionStateVectorName(const unsigned int,
+                                     Moose::SolutionIterationType iteration_type) const;
 
   /// The solution states (0 = current, 1 = old, 2 = older, etc)
-  std::vector<NumericVector<Number> *> _solution_states;
+  std::array<std::vector<NumericVector<Number> *>, 2> _solution_states;
   /// The saved solution states (0 = current, 1 = old, 2 = older, etc)
   std::vector<NumericVector<Number> *> _saved_solution_states;
 };
 
 inline bool
-SystemBase::hasSolutionState(const unsigned int state) const
+SystemBase::hasSolutionState(const unsigned int state,
+                             const Moose::SolutionIterationType iteration_type) const
 {
-  return _solution_states.size() > state;
+  return _solution_states[static_cast<unsigned short>(iteration_type)].size() > state;
 }
 
 #define PARALLEL_TRY

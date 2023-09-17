@@ -20,7 +20,6 @@
 InputParameters
 BlockRestrictable::validParams()
 {
-
   // Create InputParameters object that will be appended to the parameters for the inheriting object
   InputParameters params = emptyInputParameters();
 
@@ -83,7 +82,7 @@ BlockRestrictable::initializeBlockRestrictable(const MooseObject * moose_object)
 
   // Populate the MaterialData pointer
   if (_blk_feproblem != NULL)
-    _blk_material_data = _blk_feproblem->getMaterialData(Moose::BLOCK_MATERIAL_DATA, _blk_tid);
+    _blk_material_data = &_blk_feproblem->getMaterialData(Moose::BLOCK_MATERIAL_DATA, _blk_tid);
 
   // The 'block' input is defined
   if (moose_object->isParamValid("block"))
@@ -164,6 +163,12 @@ BlockRestrictable::initializeBlockRestrictable(const MooseObject * moose_object)
       moose_object->paramError("block", msg.str());
     }
   }
+
+  // Get the mesh dimension for the blocks
+  if (blockRestricted())
+    _blk_dim = _blk_mesh->getBlocksMaxDimension(_blocks);
+  else
+    _blk_dim = _blk_mesh->dimension();
 }
 
 bool

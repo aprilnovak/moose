@@ -93,8 +93,8 @@ FillBetweenCurvesGenerator::FillBetweenCurvesGenerator(const InputParameters & p
 std::unique_ptr<MeshBase>
 FillBetweenCurvesGenerator::generate()
 {
-  auto input_mesh_1 = dynamic_cast<ReplicatedMesh *>(_input_1.get());
-  auto input_mesh_2 = dynamic_cast<ReplicatedMesh *>(_input_2.get());
+  auto input_mesh_1 = dynamic_pointer_cast<ReplicatedMesh>(std::move(_input_1));
+  auto input_mesh_2 = dynamic_pointer_cast<ReplicatedMesh>(std::move(_input_2));
   if (!input_mesh_1)
     paramError("input_mesh_1", "Input is not a replicated mesh, which is required.");
   if (!input_mesh_2)
@@ -119,8 +119,9 @@ FillBetweenCurvesGenerator::generate()
   }
   catch (MooseException & e)
   {
-    paramError("curve_1", e.what());
+    paramError("input_mesh_1", e.what());
   }
+
   try
   {
     FillBetweenPointVectorsTools::isCurveOpenSingleSegment(*input_mesh_2,
@@ -130,7 +131,7 @@ FillBetweenCurvesGenerator::generate()
   }
   catch (MooseException & e)
   {
-    paramError("curve_2", e.what());
+    paramError("input_mesh_2", e.what());
   }
 
   std::vector<Point> positions_vector_1;

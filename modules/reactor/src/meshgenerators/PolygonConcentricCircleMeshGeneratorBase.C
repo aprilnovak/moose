@@ -16,7 +16,7 @@
 InputParameters
 PolygonConcentricCircleMeshGeneratorBase::validParams()
 {
-  InputParameters params = PolygonMeshGeneratorBase::validParams();
+  InputParameters params = ConcentricCircleGeneratorBase::validParams();
   params.addRequiredRangeCheckedParam<std::vector<unsigned int>>(
       "num_sectors_per_side",
       "num_sectors_per_side>0",
@@ -110,60 +110,6 @@ PolygonConcentricCircleMeshGeneratorBase::validParams()
       "duct_block_ids", "Optional customized block ids for each duct geometry block.");
   params.addParam<std::vector<SubdomainName>>(
       "duct_block_names", "Optional customized block names for each duct geometry block.");
-  params.addRangeCheckedParam<std::vector<Real>>(
-      "ring_radii", "ring_radii>0", "Radii of major concentric circles (rings).");
-  params.addRangeCheckedParam<std::vector<unsigned int>>(
-      "ring_intervals",
-      "ring_intervals>0",
-      "Number of radial mesh intervals within each major concentric circle excluding their "
-      "boundary "
-      "layers.");
-  params.addRangeCheckedParam<std::vector<Real>>(
-      "ring_radial_biases",
-      "ring_radial_biases>0",
-      "Values used to create biasing in radial meshing for ring regions.");
-  params.addRangeCheckedParam<std::vector<Real>>(
-      "ring_inner_boundary_layer_widths",
-      "ring_inner_boundary_layer_widths>=0",
-      "Widths of each ring regions that are assigned to be each ring's inner boundary layers.");
-  params.addParam<std::vector<unsigned int>>(
-      "ring_inner_boundary_layer_intervals",
-      "Number of radial intervals of the rings' inner boundary layers");
-  params.addRangeCheckedParam<std::vector<Real>>(
-      "ring_inner_boundary_layer_biases",
-      "ring_inner_boundary_layer_biases>0",
-      "Growth factors used for mesh biasing of the rings' inner boundary layers.");
-  params.addRangeCheckedParam<std::vector<Real>>(
-      "ring_outer_boundary_layer_widths",
-      "ring_outer_boundary_layer_widths>=0",
-      "Widths of each ring regions that are assigned to be each ring's outer boundary layers.");
-  params.addParam<std::vector<unsigned int>>(
-      "ring_outer_boundary_layer_intervals",
-      "Number of radial intervals of the rings' outer boundary layers");
-  params.addRangeCheckedParam<std::vector<Real>>(
-      "ring_outer_boundary_layer_biases",
-      "ring_outer_boundary_layer_biases>0",
-      "Growth factors used for mesh biasing of the rings' outer boundary layers.");
-  params.addParam<std::vector<subdomain_id_type>>(
-      "ring_block_ids", "Optional customized block ids for each ring geometry block.");
-  params.addParam<std::vector<SubdomainName>>(
-      "ring_block_names", "Optional customized block names for each ring geometry block.");
-  params.addParam<bool>("preserve_volumes",
-                        true,
-                        "Volume of concentric circles can be preserved using this function.");
-  params.addParam<subdomain_id_type>("block_id_shift", 0, "Integer used to shift block IDs.");
-  params.addParam<bool>(
-      "create_interface_boundaries", true, "Whether the interface boundaries are created.");
-  params.addParam<boundary_id_type>(
-      "interface_boundary_id_shift", 0, "Integer used to shift interface boundary IDs.");
-  params.addRangeCheckedParam<boundary_id_type>("external_boundary_id",
-                                                "external_boundary_id>0",
-                                                "Optional customized external boundary id.");
-  params.addParam<std::string>("external_boundary_name",
-                               "Optional customized external boundary name.");
-  params.addParam<std::vector<std::string>>(
-      "interface_boundary_names",
-      "Optional customized boundary names for the internal interfaces between block.");
   params.addParam<bool>("uniform_mesh_on_sides",
                         false,
                         "Whether the side elements are reorganized to have a uniform size.");
@@ -182,26 +128,19 @@ PolygonConcentricCircleMeshGeneratorBase::validParams()
       "flat_side_up",
       false,
       "Whether to rotate the generated polygon mesh to ensure that one flat side faces up.");
+
   params.addParamNamesToGroup(
-      "background_block_ids background_block_names duct_block_ids duct_block_names ring_block_ids "
-      "ring_block_names external_boundary_id external_boundary_name interface_boundary_names "
-      "block_id_shift create_interface_boundaries interface_boundary_id_shift",
+      "background_block_ids background_block_names duct_block_ids duct_block_names",
       "Customized Subdomain/Boundary");
   params.addParamNamesToGroup("num_sectors_per_side background_intervals duct_intervals "
-                              "ring_intervals uniform_mesh_on_sides",
+                              "uniform_mesh_on_sides",
                               "General Mesh Density");
   params.addParamNamesToGroup(
-      "ring_radial_biases duct_radial_biases background_radial_bias "
-      "ring_inner_boundary_layer_biases ring_inner_boundary_layer_widths "
+      "ring_radial_biases ring_inner_boundary_layer_biases ring_inner_boundary_layer_widths "
       "ring_inner_boundary_layer_intervals ring_outer_boundary_layer_biases "
-      "ring_outer_boundary_layer_widths ring_outer_boundary_layer_intervals "
-      "background_inner_boundary_layer_bias background_inner_boundary_layer_width "
-      "background_inner_boundary_layer_intervals background_outer_boundary_layer_bias "
-      "background_outer_boundary_layer_width background_outer_boundary_layer_intervals "
-      "duct_inner_boundary_layer_biases duct_inner_boundary_layer_widths "
-      "duct_inner_boundary_layer_intervals duct_outer_boundary_layer_biases "
-      "duct_outer_boundary_layer_widths duct_outer_boundary_layer_intervals",
+      "ring_outer_boundary_layer_widths ring_outer_boundary_layer_intervals",
       "Mesh Boundary Layers and Biasing Options");
+
   addRingAndSectorIDParams(params);
   params.addClassDescription("This PolygonConcentricCircleMeshGeneratorBase object is a base class "
                              "to be inherited for polygon mesh generators.");
@@ -211,47 +150,11 @@ PolygonConcentricCircleMeshGeneratorBase::validParams()
 
 PolygonConcentricCircleMeshGeneratorBase::PolygonConcentricCircleMeshGeneratorBase(
     const InputParameters & parameters)
-  : PolygonMeshGeneratorBase(parameters),
+  : ConcentricCircleGeneratorBase(parameters),
     _num_sides(isParamValid("num_sides")
                    ? getParam<unsigned int>("num_sides")
                    : (isParamValid("hexagon_size") ? (unsigned int)HEXAGON_NUM_SIDES
                                                    : (unsigned int)SQUARE_NUM_SIDES)),
-    _ring_radii(isParamValid("ring_radii") ? getParam<std::vector<Real>>("ring_radii")
-                                           : std::vector<Real>()),
-    _ring_intervals(isParamValid("ring_intervals")
-                        ? getParam<std::vector<unsigned int>>("ring_intervals")
-                        : std::vector<unsigned int>()),
-    _ring_radial_biases(isParamValid("ring_radial_biases")
-                            ? getParam<std::vector<Real>>("ring_radial_biases")
-                            : std::vector<Real>(_ring_intervals.size(), 1.0)),
-    _ring_inner_boundary_layer_params(
-        {isParamValid("ring_inner_boundary_layer_widths")
-             ? getParam<std::vector<Real>>("ring_inner_boundary_layer_widths")
-             : std::vector<Real>(_ring_intervals.size(), 0.0),
-         std::vector<Real>(),
-         isParamValid("ring_inner_boundary_layer_intervals")
-             ? getParam<std::vector<unsigned int>>("ring_inner_boundary_layer_intervals")
-             : std::vector<unsigned int>(_ring_intervals.size(), 0),
-         isParamValid("ring_inner_boundary_layer_biases")
-             ? getParam<std::vector<Real>>("ring_inner_boundary_layer_biases")
-             : std::vector<Real>(_ring_intervals.size(), 0.0)}),
-    _ring_outer_boundary_layer_params(
-        {isParamValid("ring_outer_boundary_layer_widths")
-             ? getParam<std::vector<Real>>("ring_outer_boundary_layer_widths")
-             : std::vector<Real>(_ring_intervals.size(), 0.0),
-         std::vector<Real>(),
-         isParamValid("ring_outer_boundary_layer_intervals")
-             ? getParam<std::vector<unsigned int>>("ring_outer_boundary_layer_intervals")
-             : std::vector<unsigned int>(_ring_intervals.size(), 0),
-         isParamValid("ring_outer_boundary_layer_biases")
-             ? getParam<std::vector<Real>>("ring_outer_boundary_layer_biases")
-             : std::vector<Real>(_ring_intervals.size(), 0.0)}),
-    _ring_block_ids(isParamValid("ring_block_ids")
-                        ? getParam<std::vector<subdomain_id_type>>("ring_block_ids")
-                        : std::vector<subdomain_id_type>()),
-    _ring_block_names(isParamValid("ring_block_names")
-                          ? getParam<std::vector<SubdomainName>>("ring_block_names")
-                          : std::vector<SubdomainName>()),
     _duct_sizes_style(getParam<MooseEnum>("duct_sizes_style").template getEnum<PolygonSizeStyle>()),
     _duct_sizes(isParamValid("duct_sizes") ? getParam<std::vector<Real>>("duct_sizes")
                                            : std::vector<Real>()),
@@ -328,39 +231,23 @@ PolygonConcentricCircleMeshGeneratorBase::PolygonConcentricCircleMeshGeneratorBa
     _background_block_names(isParamValid("background_block_names")
                                 ? getParam<std::vector<SubdomainName>>("background_block_names")
                                 : std::vector<SubdomainName>()),
-    _preserve_volumes(getParam<bool>("preserve_volumes")),
-    _block_id_shift(getParam<subdomain_id_type>("block_id_shift")),
-    _create_interface_boundaries(getParam<bool>("create_interface_boundaries")),
-    _interface_boundary_id_shift(getParam<boundary_id_type>("interface_boundary_id_shift")),
-    _external_boundary_id(isParamValid("external_boundary_id")
-                              ? getParam<boundary_id_type>("external_boundary_id")
-                              : 0),
-    _external_boundary_name(isParamValid("external_boundary_name")
-                                ? getParam<std::string>("external_boundary_name")
-                                : std::string()),
-    _interface_boundary_names(isParamValid("interface_boundary_names")
-                                  ? getParam<std::vector<std::string>>("interface_boundary_names")
-                                  : std::vector<std::string>()),
     _uniform_mesh_on_sides(getParam<bool>("uniform_mesh_on_sides")),
     _quad_center_elements(getParam<bool>("quad_center_elements")),
     _center_quad_factor(isParamValid("center_quad_factor") ? getParam<Real>("center_quad_factor")
                                                            : 0.0),
-    _flat_side_up(declareMeshProperty<bool>("flat_side_up", getParam<bool>("flat_side_up"))),
     _smoothing_max_it(getParam<unsigned int>("smoothing_max_it")),
     _sides_to_adapt(isParamValid("sides_to_adapt")
                         ? getParam<std::vector<unsigned int>>("sides_to_adapt")
                         : std::vector<unsigned int>()),
-    _pitch_meta(declareMeshProperty<Real>("pitch_meta", 0.0)),
-    _background_intervals_meta(declareMeshProperty<unsigned int>("background_intervals_meta", 0)),
     _node_id_background_meta(declareMeshProperty<dof_id_type>("node_id_background_meta", 0)),
-    _pattern_pitch_meta(declareMeshProperty<Real>("pattern_pitch_meta", 0.0)),
-    _azimuthal_angle_meta(
-        declareMeshProperty<std::vector<Real>>("azimuthal_angle_meta", std::vector<Real>())),
-    _is_control_drum_meta(declareMeshProperty<bool>("is_control_drum_meta", false)),
-    _max_radius_meta(declareMeshProperty<Real>("max_radius_meta", 0.0)),
-    _quad_center_block_id(declareMeshProperty<subdomain_id_type>(
-        "quad_center_block_id", libMesh::Elem::invalid_subdomain_id))
+    _is_control_drum_meta(declareMeshProperty<bool>("is_control_drum_meta", false))
 {
+  declareMeshProperty<bool>("flat_side_up", getParam<bool>("flat_side_up"));
+  declareMeshProperty<unsigned int>("background_intervals_meta", 0);
+  declareMeshProperty<Real>("pattern_pitch_meta", 0.0);
+  declareMeshProperty<std::vector<Real>>("azimuthal_angle_meta", std::vector<Real>());
+  declareMeshProperty<Real>("max_radius_meta", 0.0);
+
   // This error message is only reserved for future derived classes. Neither of the current derived
   // classes will trigger this error.
   if (!_sides_to_adapt.empty() && _num_sides != HEXAGON_NUM_SIDES && _num_sides != SQUARE_NUM_SIDES)
@@ -368,71 +255,87 @@ PolygonConcentricCircleMeshGeneratorBase::PolygonConcentricCircleMeshGeneratorBa
   _pitch = 2.0 * (_polygon_size_style == PolygonSizeStyle::apothem
                       ? _polygon_size
                       : _polygon_size * std::cos(M_PI / Real(_num_sides)));
-  _pitch_meta = _pitch;
-  if (!_create_interface_boundaries &&
-      (_interface_boundary_names.size() > 0 || _interface_boundary_id_shift != 0))
-    paramError("create_interface_boundaries",
-               "If set false, neither interface_boundary_names nor interface_boundary_id_shift "
-               "should be set as they are not used.");
-  if (_interface_boundary_names.size() > 0 &&
-      _interface_boundary_names.size() != _duct_sizes.size() + _ring_radii.size())
-    paramError("interface_boundary_names",
+  declareMeshProperty<Real>("pitch_meta", _pitch);
+  if (_inward_interface_boundary_names.size() > 0 &&
+      _inward_interface_boundary_names.size() != _duct_sizes.size() + _ring_radii.size())
+    paramError("inward_interface_boundary_names",
                "If provided, the length of this parameter must be identical to the total number of "
                "interfaces.");
-  if ((_has_rings || _background_intervals == 1) && _background_block_ids.size() > 1)
-    paramError("background_block_ids",
-               "This parameter must be either unset or have a unity length when ring_radii is "
-               "provided or background_intervals is unity.");
-  if ((_has_rings || _background_intervals == 1) && _background_block_names.size() > 1)
-    paramError("background_block_names",
-               "This parameter must be either unset or have a unity length when ring_radii is "
-               "provided or background_intervals is unity.");
+  if (_outward_interface_boundary_names.size() > 0 &&
+      _outward_interface_boundary_names.size() != _duct_sizes.size() + _ring_radii.size())
+    paramError("outward_interface_boundary_names",
+               "If provided, the length of this parameter must be identical to the total number of "
+               "interfaces.");
+  const unsigned int num_total_background_layers =
+      _background_intervals + _background_inner_boundary_layer_params.intervals +
+      _background_outer_boundary_layer_params.intervals;
+  if ((_has_rings || num_total_background_layers == 1) && _background_block_ids.size() > 1)
+    paramError(
+        "background_block_ids",
+        "This parameter must be either unset or have a unity length when ring_radii is "
+        "provided or the number of background intervals (including boundary layers) is unity.");
+  if ((_has_rings || num_total_background_layers == 1) && _background_block_names.size() > 1)
+    paramError(
+        "background_block_names",
+        "This parameter must be either unset or have a unity length when ring_radii is "
+        "provided or the number of background intervals (including boundary layers) is unity.");
+  if (!_has_rings && num_total_background_layers > 1 && _quad_center_elements &&
+      _background_block_ids.size() == 1)
+    _background_block_ids.insert(_background_block_ids.begin(), _background_block_ids.front());
   if ((!_has_rings && _background_intervals > 1) &&
       (!_background_block_ids.empty() && _background_block_ids.size() != 2))
     paramError("background_block_ids",
                "This parameter must be either unset or have a length of two when ring_radii is not "
-               "provided and background_intervals is not unity.");
+               "provided and background intervals (including boundary layers) is not unity. It can "
+               "optionally to have a unity length if `quad_center_elements` is enabled.");
+  if (!_has_rings && num_total_background_layers > 1 && _quad_center_elements &&
+      _background_block_names.size() == 1)
+    _background_block_names.insert(_background_block_names.begin(),
+                                   _background_block_names.front());
   if ((!_has_rings && _background_intervals > 1) &&
       (!_background_block_names.empty() && _background_block_names.size() != 2))
     paramError("background_block_names",
                "This parameter must be either unset or have a length of two when ring_radii is not "
-               "provided and background_intervals is not unity.");
+               "provided and background intervals (including boundary layers) is not unity. It can "
+               "optionally have a unity length if `quad_center_elements` is enabled.");
   if (_num_sectors_per_side.size() != _num_sides)
     paramError("num_sectors_per_side",
                "This parameter must have a length that is consistent with num_sides.");
   for (auto it = _num_sectors_per_side.begin(); it != _num_sectors_per_side.end(); ++it)
     if (*it % 2 == 1)
       paramError("num_sectors_per_side", "This parameter must be even.");
-  _num_sectors_per_side_meta =
-      declareMeshProperty("num_sectors_per_side_meta", _num_sectors_per_side);
-  // Rings related error messages
-  if (_ring_radii.size() != _ring_intervals.size())
-    paramError("ring_radii", "This parameter and ring_intervals must have the same length.");
-  if (_ring_radii.size() != _ring_radial_biases.size())
-    paramError("ring_radii", "This parameter and ring_radial_biases must have the same length.");
-  if (!_ring_block_ids.empty() &&
-      _ring_block_ids.size() !=
-          (_ring_intervals.size() + (unsigned int)(_ring_intervals.front() != 1)))
-    paramError("ring_block_ids",
-               "This parameter must have the appropriate size if it is provided.");
-  if (!_ring_block_names.empty() &&
-      _ring_block_names.size() !=
-          (_ring_intervals.size() + (unsigned int)(_ring_intervals.front() != 1)))
-    paramError("ring_block_names", "This parameter must have the appropriate size if it is set.");
-  for (unsigned int i = 1; i < _ring_intervals.size(); i++)
-    if (_ring_radii[i] <= _ring_radii[i - 1])
-      paramError("ring_radii", "This parameter must be strictly ascending.");
-  if (_ring_radii.size() != _ring_inner_boundary_layer_params.widths.size() ||
-      _ring_radii.size() != _ring_inner_boundary_layer_params.intervals.size() ||
-      _ring_radii.size() != _ring_inner_boundary_layer_params.biases.size() ||
-      _ring_radii.size() != _ring_outer_boundary_layer_params.widths.size() ||
-      _ring_radii.size() != _ring_outer_boundary_layer_params.intervals.size() ||
-      _ring_radii.size() != _ring_outer_boundary_layer_params.biases.size())
-    paramError("ring_radii",
-               "The inner and outer ring boundary layer parameters must have the same sizes as "
-               "ring_radii.");
+  declareMeshProperty("num_sectors_per_side_meta", _num_sectors_per_side);
+
   if (_has_rings)
   {
+    const unsigned int num_innermost_ring_layers =
+        _ring_inner_boundary_layer_params.intervals.front() + _ring_intervals.front() +
+        _ring_outer_boundary_layer_params.intervals.front();
+    if (!_ring_block_ids.empty() && _quad_center_elements && num_innermost_ring_layers > 1 &&
+        _ring_block_ids.size() == _ring_intervals.size())
+      _ring_block_ids.insert(_ring_block_ids.begin(), _ring_block_ids.front());
+    if (!_ring_block_ids.empty() &&
+        _ring_block_ids.size() !=
+            (_ring_intervals.size() + (unsigned int)(num_innermost_ring_layers != 1)))
+      paramError("ring_block_ids",
+                 "This parameter must have the appropriate size if it is provided. The size should "
+                 "be the same as the size of 'ring_intervals' if the innermost ring interval "
+                 "(including boundary layers) is unity; otherwise the size should be greater than "
+                 "the size of 'ring_intervals' by one. If 'quad_center_elements' is true, it is "
+                 "optional to only provide this parameter with the same size as 'ring_intervals'");
+    if (!_ring_block_names.empty() && _quad_center_elements && num_innermost_ring_layers > 1 &&
+        _ring_block_names.size() == _ring_intervals.size())
+      _ring_block_names.insert(_ring_block_names.begin(), _ring_block_names.front());
+    if (!_ring_block_names.empty() &&
+        _ring_block_names.size() !=
+            (_ring_intervals.size() + (unsigned int)(num_innermost_ring_layers != 1)))
+      paramError(
+          "ring_block_names",
+          "This parameter must have the appropriate size if it is set. The size should be the "
+          "same as the size of 'ring_intervals' if the innermost ring interval (including "
+          "boundary layers) is unity; otherwise the size should be greater than the size of "
+          "'ring_intervals' by one. If 'quad_center_elements' is true, it is optional to only "
+          "provide this parameter with the same size as 'ring_intervals'");
     for (unsigned int i = 0; i < _ring_radii.size(); i++)
     {
       const Real layer_width = _ring_radii[i] - (i == 0 ? 0.0 : _ring_radii[i - 1]);
@@ -581,21 +484,25 @@ PolygonConcentricCircleMeshGeneratorBase::PolygonConcentricCircleMeshGeneratorBa
     paramError("center_quad_factor",
                "this parameter is only applicable if quad_center_elements is set true.");
   if (_quad_center_elements)
-    _quad_center_block_id =
-        _ring_block_ids.empty() ? _background_block_ids.front() : _ring_block_ids.front();
+    declareMeshProperty<subdomain_id_type>(
+        "quad_center_block_id",
+        _has_rings ? (_ring_block_ids.empty() ? _block_id_shift + 1 : _ring_block_ids.front())
+                   : (_background_block_ids.empty() ? _block_id_shift + 1
+                                                    : _background_block_ids.front()));
+  else
+    declareMeshProperty<subdomain_id_type>("quad_center_block_id",
+                                           libMesh::Elem::invalid_subdomain_id);
 }
 
 std::unique_ptr<MeshBase>
 PolygonConcentricCircleMeshGeneratorBase::generate()
 {
-  std::vector<ReplicatedMesh *> input;
-  for (const auto & mesh : _input_ptrs)
+  std::vector<std::unique_ptr<ReplicatedMesh>> input(_input_ptrs.size());
+  for (const auto i : index_range(_input_ptrs))
   {
-    mooseAssert(mesh && (*mesh).get(), "nullptr mesh");
-    auto replicated_mesh = dynamic_cast<ReplicatedMesh *>((*mesh).get());
-    if (!replicated_mesh)
+    input[i] = dynamic_pointer_cast<ReplicatedMesh>(std::move(*_input_ptrs[i]));
+    if (!input[i])
       mooseError("A non-replicated mesh input was supplied but replicated meshes are required.");
-    input.push_back(replicated_mesh);
   }
 
   unsigned int mesh_input_counter = 0;
@@ -662,7 +569,7 @@ PolygonConcentricCircleMeshGeneratorBase::generate()
       paramError("ring_radii",
                  "Elements of this parameter must be smaller than polygon apothem (after volume "
                  "preserve correction if applicable).");
-    _max_radius_meta = ring_radii_corr.back();
+    setMeshProperty("max_radius_meta", ring_radii_corr.back());
   }
   // build the first slice of the polygon.
   auto mesh0 = buildSimpleSlice(ring_radii_corr,
@@ -688,8 +595,10 @@ PolygonConcentricCircleMeshGeneratorBase::generate()
                                 _block_id_shift,
                                 _quad_center_elements,
                                 _center_quad_factor,
-                                _create_interface_boundaries,
-                                _interface_boundary_id_shift);
+                                _create_inward_interface_boundaries,
+                                _create_outward_interface_boundaries,
+                                _interface_boundary_id_shift,
+                                _generate_side_specific_boundaries);
   // This loop builds add-on slices and stitches them to the first slice
   for (unsigned int mesh_index = 1; mesh_index < _num_sides; mesh_index++)
   {
@@ -716,8 +625,10 @@ PolygonConcentricCircleMeshGeneratorBase::generate()
                                      _block_id_shift,
                                      _quad_center_elements,
                                      _center_quad_factor,
-                                     _create_interface_boundaries,
-                                     _interface_boundary_id_shift);
+                                     _create_inward_interface_boundaries,
+                                     _create_outward_interface_boundaries,
+                                     _interface_boundary_id_shift,
+                                     _generate_side_specific_boundaries);
 
     ReplicatedMesh other_mesh(*mesh_tmp);
     MeshTools::Modification::rotate(other_mesh, 360.0 / _num_sides * mesh_index, 0, 0);
@@ -735,8 +646,9 @@ PolygonConcentricCircleMeshGeneratorBase::generate()
 
   if (!_is_general_polygon)
   {
-    _azimuthal_angle_meta = azimuthalAnglesCollector(*mesh0, -180.0, 180.0, ANGLE_DEGREE);
-    _pattern_pitch_meta = _pitch;
+    setMeshProperty("azimuthal_angle_meta",
+                    azimuthalAnglesCollector(*mesh0, -180.0, 180.0, ANGLE_DEGREE));
+    setMeshProperty("pattern_pitch_meta", _pitch);
   }
 
   // Move nodes on the external boundary for force uniform spacing.
@@ -787,7 +699,7 @@ PolygonConcentricCircleMeshGeneratorBase::generate()
     MeshTools::Modification::rotate(*mesh0, (270.0 - 360.0 / (Real)_num_sides), 0.0, 0.0);
   }
 
-  _background_intervals_meta = _background_intervals;
+  setMeshProperty("background_intervals_meta", _background_intervals);
 
   if (!_has_ducts && _sides_to_adapt.empty())
   {
@@ -804,28 +716,7 @@ PolygonConcentricCircleMeshGeneratorBase::generate()
   std::vector<SubdomainName> block_names;
   if (_has_rings)
   {
-    if (_ring_intervals.front() == 1)
-      ring_block_num = _ring_intervals.size();
-    else
-    {
-      ring_block_num = _ring_intervals.size() + 1;
-      block_ids_old.push_back(_block_id_shift + 1);
-      block_ids_new.push_back(_ring_block_ids.empty() ? block_ids_old.back()
-                                                      : _ring_block_ids.front());
-      block_names.push_back(_ring_block_names.empty()
-                                ? (SubdomainName)std::to_string(block_ids_new.back())
-                                : _ring_block_names.front());
-      block_it++;
-    }
-    for (unsigned int i = ring_block_num - _ring_intervals.size(); i < ring_block_num; i++)
-    {
-      block_ids_old.push_back(_block_id_shift + 1 + i);
-      block_ids_new.push_back(_ring_block_ids.empty() ? block_ids_old.back() : _ring_block_ids[i]);
-      block_names.push_back(_ring_block_names.empty()
-                                ? (SubdomainName)std::to_string(block_ids_new.back())
-                                : _ring_block_names[i]);
-      block_it++;
-    }
+    ringBlockIdsNamesPreparer(block_it, ring_block_num, block_ids_old, block_ids_new, block_names);
   }
   else
   {
@@ -861,25 +752,8 @@ PolygonConcentricCircleMeshGeneratorBase::generate()
     }
   }
 
-  for (auto it = block_names.begin(); it != block_names.end() - 1; it++)
-  {
-    auto it_tmp = std::find(block_names.begin(), it + 1, *(it + 1));
-    if (it_tmp != it + 1 && block_ids_new[std::distance(block_names.begin(), it + 1)] !=
-                                block_ids_new[std::distance(block_names.begin(), it_tmp)])
-      mooseError("In ConcentricCircleMeshGenerator ",
-                 _name,
-                 ": blocks with different ids cannot have the same block name.");
-  }
-
-  for (const auto & elem : mesh0->element_ptr_range())
-    for (unsigned i = 0; i < block_ids_old.size(); ++i)
-      if (elem->subdomain_id() == block_ids_old[i])
-      {
-        elem->subdomain_id() = block_ids_new[i];
-        break;
-      }
-  for (unsigned i = 0; i < block_ids_new.size(); ++i)
-    mesh0->subdomain_name(block_ids_new[i]) = block_names[i];
+  assignBlockIdsNames(
+      *mesh0, block_ids_old, block_ids_new, block_names, "ConcentricCircleMeshGenerator");
 
   if (_external_boundary_id > 0)
     MooseMesh::changeBoundaryId(*mesh0, OUTER_SIDESET_ID, _external_boundary_id, false);
@@ -892,18 +766,8 @@ PolygonConcentricCircleMeshGeneratorBase::generate()
         _external_boundary_id > 0 ? _external_boundary_id : (boundary_id_type)OUTER_SIDESET_ID) =
         _external_boundary_name;
   }
-  if (_create_interface_boundaries && !_interface_boundary_names.empty())
-  {
-    unsigned int interface_id_shift =
-        _has_rings ? (_ring_intervals.front() > 1 ? 2 : 1) : (_background_intervals > 1 ? 2 : 1);
-    for (unsigned int i = 0; i < _interface_boundary_names.size(); i++)
-    {
-      mesh0->get_boundary_info().sideset_name(
-          i + interface_id_shift + _interface_boundary_id_shift) = _interface_boundary_names[i];
-      mesh0->get_boundary_info().nodeset_name(
-          i + interface_id_shift + _interface_boundary_id_shift) = _interface_boundary_names[i];
-    }
-  }
+
+  assignInterfaceBoundaryNames(*mesh0);
 
   // add sector ids
   if (isParamValid("sector_id_name"))
@@ -920,7 +784,9 @@ PolygonConcentricCircleMeshGeneratorBase::generate()
                     getParam<MooseEnum>("ring_id_assign_type") == "ring_wise",
                     _quad_center_elements);
 
-  if (_flat_side_up)
+  bool flat_side_up = getMeshProperty<bool>("flat_side_up", name());
+  if (flat_side_up)
     MeshTools::Modification::rotate(*mesh0, 180.0 / (Real)_num_sides, 0.0, 0.0);
+  mesh0->set_isnt_prepared();
   return dynamic_pointer_cast<MeshBase>(mesh0);
 }

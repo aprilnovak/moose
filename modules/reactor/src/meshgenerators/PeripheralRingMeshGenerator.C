@@ -133,24 +133,23 @@ PeripheralRingMeshGenerator::PeripheralRingMeshGenerator(const InputParameters &
     _external_boundary_name(isParamValid("external_boundary_name")
                                 ? getParam<std::string>("external_boundary_name")
                                 : std::string()),
-    _input(getMeshByName(_input_name)),
-    _hexagon_peripheral_trimmability(
-        declareMeshProperty<bool>("hexagon_peripheral_trimmability", false)),
-    _hexagon_center_trimmability(declareMeshProperty<bool>("hexagon_center_trimmability", false)),
-    _square_peripheral_trimmability(
-        declareMeshProperty<bool>("square_peripheral_trimmability", false)),
-    _square_center_trimmability(declareMeshProperty<bool>("square_center_trimmability", false))
+    _input(getMeshByName(_input_name))
 {
+  declareMeshProperty<bool>("hexagon_peripheral_trimmability", false);
+  declareMeshProperty<bool>("hexagon_center_trimmability", false);
+  declareMeshProperty<bool>("square_peripheral_trimmability", false);
+  declareMeshProperty<bool>("square_center_trimmability", false);
 }
 
 std::unique_ptr<MeshBase>
 PeripheralRingMeshGenerator::generate()
 {
-  if (hasMeshProperty("hexagon_center_trimmability", _input_name))
-    _hexagon_center_trimmability =
-        getMeshProperty<bool>("hexagon_center_trimmability", _input_name);
-  if (hasMeshProperty("square_center_trimmability", _input_name))
-    _square_center_trimmability = getMeshProperty<bool>("square_center_trimmability", _input_name);
+  if (hasMeshProperty<bool>("hexagon_center_trimmability", _input_name))
+    setMeshProperty("hexagon_center_trimmability",
+                    getMeshProperty<bool>("hexagon_center_trimmability", _input_name));
+  if (hasMeshProperty<bool>("square_center_trimmability", _input_name))
+    setMeshProperty("square_center_trimmability",
+                    getMeshProperty<bool>("square_center_trimmability", _input_name));
   // Calculate biasing terms
   const auto main_peripheral_bias_terms =
       biasTermsCalculator(_peripheral_radial_bias, _peripheral_layer_num);
@@ -194,7 +193,12 @@ PeripheralRingMeshGenerator::generate()
   }
   catch (MooseException & e)
   {
-    paramError("input_mesh_external_boundary", e.what());
+    if (((std::string)e.what()).compare("The node list provided has more than one segments.") == 0)
+      paramError("input_mesh_external_boundary",
+                 "This mesh generator does not work for the provided external boundary as it has "
+                 "more than one segments.");
+    else
+      paramError("input_mesh_external_boundary", e.what());
   }
 
   if (max_input_mesh_node_radius >= _peripheral_ring_radius)
@@ -332,10 +336,13 @@ PeripheralRingMeshGenerator::generate()
                          [i] -
              origin_pt)
                 .norm()))
+    {
       paramError("peripheral_inner_boundary_layer_width",
                  "The summation of peripheral_inner_boundary_layer_width and "
                  "peripheral_outer_boundary_layer_width must be smaller than the thickness of "
                  "peripheral ring region.");
+    }
+
     for (unsigned int j = 1; j < _peripheral_layer_num; ++j)
       points_array[j + _peripheral_inner_boundary_layer_params.intervals][i] =
           points_array[_peripheral_inner_boundary_layer_params.intervals][i] *
@@ -398,6 +405,7 @@ PeripheralRingMeshGenerator::generate()
         _external_boundary_name;
   }
 
+  _input->set_isnt_prepared();
   return dynamic_pointer_cast<MeshBase>(_input);
 }
 

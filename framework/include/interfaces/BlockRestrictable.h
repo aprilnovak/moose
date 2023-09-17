@@ -108,6 +108,11 @@ public:
   const virtual std::set<SubdomainID> & blockIDs() const;
 
   /**
+   * Return the largest mesh dimension of the elements in the blocks for this object
+   */
+  unsigned int blocksMaxDimension() const { return _blk_dim; }
+
+  /**
    * Test if the supplied block name is valid for this object
    * @param name A SubdomainName to check
    * @return True if the given id is valid for this object
@@ -198,7 +203,7 @@ public:
 
 protected:
   /// Pointer to the MaterialData class for this object
-  std::shared_ptr<MaterialData> _blk_material_data;
+  const MaterialData * _blk_material_data;
 
   /**
    * A helper method to allow the Material object to specialize the behavior
@@ -248,6 +253,9 @@ private:
 
   /// Name of the object
   const std::string & _blk_name;
+
+  /// Largest mesh dimension of the elements in the blocks for this object
+  unsigned int _blk_dim;
 };
 
 template <typename T, bool is_ad>

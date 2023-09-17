@@ -9,13 +9,13 @@
 
 #pragma once
 
-#include "PolygonMeshGeneratorBase.h"
+#include "ConcentricCircleGeneratorBase.h"
 
 /**
  * This PolygonConcentricCircleMeshGeneratorBase object is a base class to be inherited for polygon
  * mesh generators.
  */
-class PolygonConcentricCircleMeshGeneratorBase : public PolygonMeshGeneratorBase
+class PolygonConcentricCircleMeshGeneratorBase : public ConcentricCircleGeneratorBase
 {
 public:
   static InputParameters validParams();
@@ -27,20 +27,6 @@ public:
 protected:
   /// Number of polygon sides
   const unsigned int _num_sides;
-  /// Radii of concentric circles
-  const std::vector<Real> _ring_radii;
-  /// Number of rings in each circle or in the enclosing square
-  const std::vector<unsigned int> _ring_intervals;
-  /// Bias values used to induce biasing to radial meshing in ring regions
-  const std::vector<Real> _ring_radial_biases;
-  /// Widths, fractions, radial sectors and growth factors of the inner boundary layers of the ring regions
-  multiBdryLayerParams _ring_inner_boundary_layer_params;
-  /// Widths, fractions, radial sectors and growth factors of the outer boundary layers of the ring regions
-  multiBdryLayerParams _ring_outer_boundary_layer_params;
-  /// Subdomain IDs of the ring regions
-  const std::vector<subdomain_id_type> _ring_block_ids;
-  /// Subdomain Names of the ting regions
-  const std::vector<SubdomainName> _ring_block_names;
   /// Thickness of each enclosing duct
   const PolygonSizeStyle _duct_sizes_style;
   /// Size parameters of the duct regions
@@ -76,31 +62,15 @@ protected:
   /// Width, fraction, radiation sectors and growth factor of the outer boundary layer of the background region
   singleBdryLayerParams _background_outer_boundary_layer_params;
   /// Subdomain IDs of the background regions
-  const std::vector<subdomain_id_type> _background_block_ids;
+  std::vector<subdomain_id_type> _background_block_ids;
   /// Subdomain Names of the background regions
-  const std::vector<SubdomainName> _background_block_names;
-  /// Volume preserving function is optional
-  const bool _preserve_volumes;
-  /// Shift in default subdomain IDs to avert potential conflicts
-  const subdomain_id_type _block_id_shift;
-  /// Whether interface boundaries are created
-  const bool _create_interface_boundaries;
-  /// Shift in default boundary IDs of interfaces to avert potential conflicts
-  const boundary_id_type _interface_boundary_id_shift;
-  /// Boundary ID of the mesh's external boundary
-  const boundary_id_type _external_boundary_id;
-  /// Boundary Name of the mesh's external boundary
-  const std::string _external_boundary_name;
-  /// Boundary Names of the mesh's interface boundaries
-  const std::vector<std::string> _interface_boundary_names;
+  std::vector<SubdomainName> _background_block_names;
   /// Whether the nodes on the external boundary needs to be uniformly distributed
   const bool _uniform_mesh_on_sides;
   /// Whether the central elements need to be QUAD4
   const bool _quad_center_elements;
   /// A fractional radius factor used to determine the radial positions of transition nodes in the center region meshed by quad elements (default is 1.0 - 1.0/div_num)
   const Real _center_quad_factor;
-  /// Whether to rotate the generated polygon mesh to ensure that one flat side faces up
-  const bool & _flat_side_up;
   /// Maximum smooth iteration number
   const unsigned int _smoothing_max_it;
   /// Indices of the hexagon sides that need to adapt
@@ -109,26 +79,12 @@ protected:
   std::vector<std::unique_ptr<MeshBase> *> _input_ptrs;
   /// MeshMetaData: whether this produced mesh is a general polygon (or a hexagon)
   bool _is_general_polygon;
-  /// MeshMetaData: pitch size of the produced mesh
-  Real & _pitch_meta;
-  /// MeshMetaData: number of radial intervals of the background region
-  unsigned int & _background_intervals_meta;
   /// MeshMetaData: maximum node id of the background region
   dof_id_type & _node_id_background_meta;
-  /// Pitch size of the produced polygon
-  Real _pitch;
-  /// MeshMetaData: mesh sector number of each polygon side
-  std::vector<unsigned int> _num_sectors_per_side_meta;
-  /// Azimuthal angles of all radial nodes for volume preservation
-  std::vector<std::vector<Real>> _azimuthal_angles_array;
-  /// MeshMetaData: pitch size to be used when stitching with assembly meshes
-  Real & _pattern_pitch_meta;
-  /// MeshMetaData: azimuthal angles of all nodes
-  std::vector<Real> & _azimuthal_angle_meta;
   /// MeshMetaData: whether this produced mesh is a control drum
   bool & _is_control_drum_meta;
-  /// Metadata of the maximum radius of ring regions
-  Real & _max_radius_meta;
-  /// MeshMetaData: ID of the cental quad elements block if it exists
-  subdomain_id_type & _quad_center_block_id;
+  /// Pitch size of the produced polygon
+  Real _pitch;
+  /// Azimuthal angles of all radial nodes for volume preservation
+  std::vector<std::vector<Real>> _azimuthal_angles_array;
 };

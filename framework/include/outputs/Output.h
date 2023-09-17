@@ -19,8 +19,10 @@
 #include "ReporterInterface.h"
 #include "AdvancedOutputUtils.h"
 #include "PerfGraphInterface.h"
+#include "FunctionInterface.h"
 
 class MooseMesh;
+class Times;
 
 // libMesh forward declarations
 namespace libMesh
@@ -40,6 +42,7 @@ class Output : public MooseObject,
                public Restartable,
                public MeshChangedInterface,
                public SetupInterface,
+               public FunctionInterface,
                public PostprocessorInterface,
                public VectorPostprocessorInterface,
                public ReporterInterface,
@@ -136,11 +139,13 @@ public:
    */
   virtual void outputStep(const ExecFlagType & type);
 
+  const std::set<Real> & getSyncTimes() { return _sync_times; }
+
 protected:
   /**
    * Overload this function with the desired output activities
    */
-  virtual void output(const ExecFlagType & type) = 0;
+  virtual void output() = 0;
 
   /**
    * A method called just prior to the solve, this is used by PetscOutput to perform the necessary
@@ -152,7 +157,7 @@ protected:
    * Handles logic for determining if a step should be output
    * @return True if a call if output should be performed
    */
-  virtual bool shouldOutput(const ExecFlagType & type);
+  virtual bool shouldOutput();
 
   /**
    * Returns true if the output interval is satisfied
@@ -181,6 +186,14 @@ protected:
   /// The common Execution types; this is used as the default execution type for everything except system information and input
   ExecFlagEnum _execute_on;
 
+  /**
+   * Current execute on flag. This is different from the flag provided by
+   * FEProblemBase::getCurrentExecuteOnFlag() const, as outputs are triggered
+   * in PETSc callbacks which cannot update  FEProblemBase::_current_execute_on_flag
+   * so we shadow it with a new member of the same name.
+   */
+  ExecFlagType _current_execute_flag;
+
   /// The current time for output purposes
   Real & _time;
 
@@ -202,8 +215,14 @@ protected:
   /// The output time step interval
   const unsigned int _interval;
 
+  /// Minimum simulation time between outputs
+  const Real _minimum_time_interval;
+
   /// Sync times for this outputter
   std::set<Real> _sync_times;
+
+  /// Sync times object for this outputter
+  const Times * const _sync_times_object;
 
   /// Start outputting time
   Real _start_time;
@@ -234,6 +253,9 @@ protected:
   // access to this data from the Console object for displaying
   // the output settings.
   OutputOnWarehouse _advanced_execute_on;
+
+  /// last simulation time an output has occured
+  Real & _last_output_time;
 
   friend class OutputWarehouse;
 };

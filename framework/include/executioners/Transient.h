@@ -10,6 +10,7 @@
 #pragma once
 
 #include "Executioner.h"
+#include "TimeIntegrator.h"
 
 // System includes
 #include <string>
@@ -118,19 +119,25 @@ public:
    * Pointer to the TimeStepper
    * @return Pointer to the time stepper for this Executioner
    */
-  TimeStepper * getTimeStepper() { return _time_stepper.get(); }
+  TimeStepper * getTimeStepper() { return _time_stepper; }
 
   /**
    * Set the timestepper to use.
    *
    * @param ts The TimeStepper to use
    */
-  void setTimeStepper(std::shared_ptr<TimeStepper> ts) { _time_stepper = ts; }
+  void setTimeStepper(TimeStepper & ts);
 
   /**
-   * Get the timestepper.
+   * Get the name of the timestepper.
    */
-  virtual std::string getTimeStepperName() override;
+  virtual std::string getTimeStepperName() const override;
+
+  /**
+   * Get the name of the time integrator (time integration scheme) used
+   * @return string with the time integration scheme name
+   */
+  virtual std::string getTimeIntegratorName() const override;
 
   /**
    * Get the time scheme used
@@ -225,7 +232,7 @@ protected:
   const bool _check_aux;
 
   Moose::TimeIntegratorType _time_scheme;
-  std::shared_ptr<TimeStepper> _time_stepper;
+  TimeStepper * _time_stepper;
 
   /// Current timestep.
   int & _t_step;
@@ -279,13 +286,16 @@ protected:
 
   Real & _solution_change_norm;
 
-  /// The difference of current and old solutions
-  NumericVector<Number> & _sln_diff;
-
   void setupTimeIntegrator();
 
   /// Whether to divide the solution difference norm by dt. If taking 'small' time steps this member
   /// should probably be true. If taking very 'large' timesteps in an attempt to reach a
   /// steady-state, this member should probably be be false.
   const bool _normalize_solution_diff_norm_by_dt;
+
+private:
+  /// Constrain the timestep dt_cur by looking at the timesteps for the MultiApps on execute_on
+  void constrainDTFromMultiApp(Real & dt_cur,
+                               std::ostringstream & diag,
+                               const ExecFlagType & execute_on) const;
 };

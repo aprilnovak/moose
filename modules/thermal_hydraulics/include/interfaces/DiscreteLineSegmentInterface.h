@@ -38,6 +38,27 @@ public:
    */
   Real computeAxialCoordinate(const Point & p) const;
 
+  /*
+   * Computes the radial coordinate from the line axis for a given point in 3-D space.
+   *
+   * @param[in] p   Point in 3-D space
+   */
+  Real computeRadialCoordinate(const Point & p) const;
+
+  /*
+   * Gets the axial section index for a given point in 3-D space.
+   *
+   * @param[in] p   Point in 3-D space
+   */
+  unsigned int getAxialSectionIndex(const Point & p) const;
+
+  /*
+   * Gets the axial element index for a given element center point in 3-D space.
+   *
+   * @param[in] p_center   Element center point in 3-D space
+   */
+  unsigned int getAxialElementIndex(const Point & p_center) const;
+
   /**
    * Computes point in 3-D space from a point in reference space.
    *
@@ -87,6 +108,11 @@ protected:
 
   /// Number of axial sections
   const unsigned int _n_sections;
+  /// Axial coordinate of the end of each axial section using the line 'position' as the origin
+  std::vector<Real> _section_end;
+
+  /// Center axial coordinate of each axial element
+  std::vector<Real> _x_centers;
 
   /// Direction transformation tensor
   const RealTensorValue _R;
