@@ -12,7 +12,7 @@
 #include "ThreadedGeneralUserObject.h"
 #include "SolutionInvalidInterface.h"
 
-class SolidProperties : public ThreadedGeneralUserObject , public SolutionInvalidInterface
+class SolidProperties : public ThreadedGeneralUserObject, public SolutionInvalidInterface
 {
 public:
   static InputParameters validParams();
